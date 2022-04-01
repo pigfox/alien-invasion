@@ -6,17 +6,20 @@ import (
 	"log"
 	"math/rand"
 	"os"
+	"reflect"
 	"strconv"
 	"strings"
 )
 
 var invaders Invaders
 var battlefield Battlefield
+var directions []string
 
 const alienMoveLimit = 10 //10000
 
 func init() {
-	invaders = Invaders{map[int]Alien{}}
+	directions = []string{"north", "west", "south", "east"}
+	invaders = Invaders{make(map[int]Alien)}
 	battlefield = Battlefield{make(map[int]City)}
 	readBattlefield()
 }
@@ -26,8 +29,6 @@ func main() {
 	fmt.Println("Enter number of aliens you wish to create.")
 
 	createAliens(getInput())
-	//invadeRandomCity()
-	/*	*/
 	for {
 		invadeRandomCity()
 	}
@@ -59,9 +60,10 @@ func invadeRandomCity() {
 			tmp := invaders.alien
 			moves := v.moves
 			moves++
-			tmp[0] = Alien{moves: moves, currentCityId: getRandomCity()}
-			invaders.alien[k] = tmp[0]
 
+			tmp[0] = Alien{moves: moves, currentCityId: getRandomOriginCity()}
+			invaders.alien[k] = tmp[0]
+			//isCityOccupied()
 			if alienMoveLimit <= invaders.alien[k].moves {
 				removeAlien(k)
 			}
@@ -77,6 +79,14 @@ func setCityOccupied(id int) {
 	battlefield.cities[id] = tmp
 }
 
+func isCityOccupied() {
+
+}
+
+func useTzarBomba() {
+
+}
+
 func getCityOccupier(id int) int {
 	return battlefield.cities[id].occupier
 }
@@ -85,9 +95,56 @@ func removeAlien(id int) {
 	delete(invaders.alien, id)
 }
 
-func getRandomCity() int {
-	//check id if exists
-	return rand.Intn(len(battlefield.cities))
+func getRandomOriginCity() int {
+	id := -1
+	lengthCities := len(battlefield.cities)
+	//make sure all cities have not been nuked...
+	if 0 < lengthCities {
+		id = rand.Intn(lengthCities)
+		if cityExist(id) {
+			direction := directions[rand.Intn(len(directions))]
+			exists := targetCityExists(direction, id)
+			if exists {
+				return id
+			} else {
+				getRandomOriginCity()
+			}
+		} else {
+			fmt.Println("City not found")
+		}
+	}
+	return id
+}
+
+func targetCityExists(dir string, id int) bool {
+	newCity := ""
+	switch dir {
+	case "north":
+		newCity = battlefield.cities[id].north
+	case "west":
+		newCity = battlefield.cities[id].west
+	case "south":
+		newCity = battlefield.cities[id].south
+	case "east":
+		newCity = battlefield.cities[id].east
+	}
+
+	for _, v := range battlefield.cities {
+		if v.name == newCity {
+			return true
+		}
+	}
+
+	return false
+}
+
+func cityExist(id int) bool {
+	t := reflect.TypeOf(battlefield.cities[id]).Kind()
+	c := reflect.TypeOf(City{}).Kind()
+	if reflect.TypeOf(c) != reflect.TypeOf(t) {
+		return false
+	}
+	return true
 }
 
 func createAliens(n int) {
