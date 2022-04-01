@@ -1,0 +1,10 @@
+Copenhagen​ north=Stockholm ​west=London ​south=Rome east=Berlin
+Berlin north=Copenhagen​ ​west=Paris south=Munich east=Moscow
+Paris north=London ​west=New-York south=Madrid east=Berlin
+London north=Oslo ​west=New-York south=Madrid east=Berlin
+New-York north=Boston ​west=Los-Angeles south=Miami east=london
+Los-Angeles north=San-fransico ​west=Honolulu south=San-Diego east=Miami
+San-fransico north=Seattle ​west=Honolulu south=Los-Angeles east=Miami
+Miami north=New-York ​west=Los-Angeles south=Havana east=Madrid
+Madrid north=Paris ​west=Lisbon south=Casablanca east=Rome
+Athens north=Prague ​west=Parga south=Syros-island east=Rhodes-island
