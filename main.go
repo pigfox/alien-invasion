@@ -6,7 +6,6 @@ import (
 	"log"
 	"math/rand"
 	"os"
-	"reflect"
 	"strconv"
 	"strings"
 )
@@ -20,7 +19,7 @@ const alienMoveLimit = 10000
 func init() {
 	directions = []string{"north", "west", "south", "east"}
 	invaders = Invaders{make(map[int]Alien)}
-	battlefield = Battlefield{map[int]City{}}
+	battlefield = Battlefield{make(map[int]City)}
 	readBattlefield()
 }
 
@@ -69,29 +68,10 @@ func invadeRandomCity() {
 			tmpAlien[0] = Alien{moves: moves, currentCityId: cityID}
 			invaders.alien[alienID] = tmpAlien[0]
 			setCityOccupier(alienID, cityID)
-			//checkAliens()
-			/*
-				fmt.Print(cityID)
-				fmt.Print(battlefield.cities[cityID])
-				fmt.Print("occupier:")
-				fmt.Println(alienID)
-
-
-					fmt.Print("occupier:")
-					fmt.Println(occupier)
-					fmt.Print("cityID:")
-					fmt.Println(cityID)
-					fmt.Print("k:")
-					fmt.Println(k)
-			*/
 
 			if alienMoveLimit <= invaders.alien[alienID].moves {
-				deleteAlien(alienID)
+				delete(invaders.alien, alienID)
 			}
-			//fmt.Print("alienID:")
-			//fmt.Println(alienID)
-			//checkAliens()
-			//checkCities()
 		}
 	} else {
 		gameOver("Game over! All aliens have died...")
@@ -107,7 +87,7 @@ func getNumberAliens() int {
 }
 
 func setCityOccupier(challengerID int, cityID int) {
-	//city is already occupied
+	//city is already occupied if -1 < occupierID
 	occupierID := getCityOccupier(cityID)
 	if -1 < occupierID {
 		destroy(occupierID, challengerID, cityID)
@@ -130,40 +110,26 @@ func destroy(occupierID int, challengerID int, cityID int) {
 		log.Fatalf(s)
 	}
 
+	if !cityExist(cityID) {
+		return
+	}
+
 	if occupierID == challengerID {
 		return
 	}
 
 	city := battlefield.cities[cityID].name
-	if city == "" {
-		invadeRandomCity()
-	}
 	a1 := strconv.Itoa(occupierID)
 	a2 := strconv.Itoa(challengerID)
+	cityIDStr := strconv.Itoa(cityID)
 
-	s := city + " has been destroyed by alien " + a1 + " and alien " + a2 + "!"
+	s := city + "(" + cityIDStr + ")" + " has been destroyed by alien " + a1 + " and alien " + a2 + "!"
 	fmt.Println(s)
 
-	deleteAlien(occupierID)
-	deleteAlien(challengerID)
-	deleteCity(cityID)
+	delete(battlefield.cities, cityID)
+	delete(invaders.alien, occupierID)
+	delete(invaders.alien, challengerID)
 	invadeRandomCity()
-}
-
-func deleteAlien(id int) {
-	if 0 < len(invaders.alien) {
-		fmt.Println("Deleting alien #" + strconv.Itoa(id))
-		delete(invaders.alien, id)
-		fmt.Println("Number of aliens left: " + strconv.Itoa(len(invaders.alien)))
-	}
-}
-
-func deleteCity(id int) {
-	if 0 < len(battlefield.cities) {
-		fmt.Println("Deleting city #" + strconv.Itoa(id))
-		delete(battlefield.cities, id)
-		fmt.Println("Number of cities left: " + strconv.Itoa(len(battlefield.cities)))
-	}
 }
 
 func getRandomCity() int {
@@ -180,8 +146,6 @@ func getRandomCity() int {
 			} else {
 				getRandomCity()
 			}
-		} else {
-			fmt.Println("City not found")
 		}
 	}
 	return id
@@ -210,9 +174,8 @@ func targetCityExists(dir string, id int) bool {
 }
 
 func cityExist(id int) bool {
-	t := reflect.TypeOf(battlefield.cities[id]).Kind()
-	c := reflect.TypeOf(City{}).Kind()
-	if reflect.TypeOf(c) != reflect.TypeOf(t) {
+	name := battlefield.cities[id].name
+	if len(name) == 0 {
 		return false
 	}
 	return true
@@ -222,7 +185,6 @@ func createAliens(n int) {
 	for m := 0; m < n; m++ {
 		invaders.alien[m] = Alien{id: m, moves: 0, currentCityId: 0}
 	}
-	//checkAliens()
 }
 
 func readBattlefield() {
@@ -271,7 +233,7 @@ func readBattlefield() {
 
 //Function to verify that map indices are consistent with city ids
 func checkCities() {
-	fmt.Println("Cities start")
+	fmt.Println("---Cities start---")
 	for k, v := range battlefield.cities {
 		fmt.Print(k)
 		fmt.Print(":")
@@ -282,12 +244,12 @@ func checkCities() {
 			log.Fatalf(s)
 		}
 	}
-	fmt.Println("Cities end")
+	fmt.Println("---Cities end---")
 }
 
 //Function to verify that map indices are consistent with alien ids
 func checkAliens() {
-	fmt.Println("Aliens start")
+	fmt.Println("---Aliens start---")
 	for k, v := range invaders.alien {
 		fmt.Print(k)
 		fmt.Print(":")
@@ -298,5 +260,5 @@ func checkAliens() {
 			log.Fatalf(s)
 		}
 	}
-	fmt.Println("Aliens end")
+	fmt.Println("---Aliens end---")
 }
