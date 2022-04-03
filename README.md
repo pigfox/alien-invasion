@@ -1,6 +1,6 @@
 # alien-invasion
 Instructions
-1. $ go run *.go
+1. $ go run main.go
 
 Assumptions
 1. Not every city has a road to every other cities, dead ends do exist.
@@ -12,7 +12,7 @@ Findings
 1. The instructions were "You are given a map containing the names of cities in the non-existent world of X." There was no map provided so I created one with 10 cities. The very limited data set opens the possibility of many of unpredictable outcomes.
 
 Sample Run
-$ go run *.go 
+$ go run main.go 
 Alien invasion starting...
 Enter number of aliens you wish to create.
 1000000
