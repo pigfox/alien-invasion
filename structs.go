@@ -5,6 +5,7 @@ type Invaders struct {
 }
 
 type Alien struct {
+	id            int
 	moves         int
 	currentCityId int
 }
@@ -14,6 +15,7 @@ type Battlefield struct {
 }
 
 type City struct {
+	id       int
 	name     string
 	north    string
 	west     string

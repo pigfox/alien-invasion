@@ -15,12 +15,12 @@ var invaders Invaders
 var battlefield Battlefield
 var directions []string
 
-const alienMoveLimit = 10 //10000
+const alienMoveLimit = 10000
 
 func init() {
 	directions = []string{"north", "west", "south", "east"}
 	invaders = Invaders{make(map[int]Alien)}
-	battlefield = Battlefield{make(map[int]City)}
+	battlefield = Battlefield{map[int]City{}}
 	readBattlefield()
 }
 
@@ -32,7 +32,6 @@ func main() {
 	for {
 		invadeRandomCity()
 	}
-
 }
 
 func getInput() int {
@@ -55,50 +54,122 @@ func gameOver(s string) {
 }
 
 func invadeRandomCity() {
-	if 0 < len(invaders.alien) {
-		for k, v := range invaders.alien {
-			tmp := invaders.alien
-			moves := v.moves
+	if 0 < getNumberAliens() {
+		if getNumberCities() == 0 {
+			gameOver("Game over! No cities left to invade...")
+		}
+
+		for alienID, alien := range invaders.alien {
+			moves := alien.moves
 			moves++
 
-			tmp[0] = Alien{moves: moves, currentCityId: getRandomOriginCity()}
-			invaders.alien[k] = tmp[0]
-			//isCityOccupied()
-			if alienMoveLimit <= invaders.alien[k].moves {
-				removeAlien(k)
+			cityID := getRandomCity()
+
+			tmpAlien := invaders.alien
+			tmpAlien[0] = Alien{moves: moves, currentCityId: cityID}
+			invaders.alien[alienID] = tmpAlien[0]
+			setCityOccupier(alienID, cityID)
+			//checkAliens()
+			/*
+				fmt.Print(cityID)
+				fmt.Print(battlefield.cities[cityID])
+				fmt.Print("occupier:")
+				fmt.Println(alienID)
+
+
+					fmt.Print("occupier:")
+					fmt.Println(occupier)
+					fmt.Print("cityID:")
+					fmt.Println(cityID)
+					fmt.Print("k:")
+					fmt.Println(k)
+			*/
+
+			if alienMoveLimit <= invaders.alien[alienID].moves {
+				deleteAlien(alienID)
 			}
+			//fmt.Print("alienID:")
+			//fmt.Println(alienID)
+			//checkAliens()
+			//checkCities()
 		}
 	} else {
-		gameOver("Game over. All invaders have died...")
+		gameOver("Game over! All aliens have died...")
 	}
 }
 
-func setCityOccupied(id int) {
-	tmp := battlefield.cities[id]
-	tmp.occupier = id
-	battlefield.cities[id] = tmp
+func getNumberCities() int {
+	return len(battlefield.cities)
 }
 
-func isCityOccupied() {
-
+func getNumberAliens() int {
+	return len(invaders.alien)
 }
 
-func useTzarBomba() {
-
+func setCityOccupier(challengerID int, cityID int) {
+	//city is already occupied
+	occupierID := getCityOccupier(cityID)
+	if -1 < occupierID {
+		destroy(occupierID, challengerID, cityID)
+		return
+	}
+	tmpCity := battlefield.cities[cityID]
+	tmpCity.occupier = challengerID
+	battlefield.cities[cityID] = tmpCity
 }
 
 func getCityOccupier(id int) int {
 	return battlefield.cities[id].occupier
 }
 
-func removeAlien(id int) {
-	delete(invaders.alien, id)
+func destroy(occupierID int, challengerID int, cityID int) {
+	if occupierID < 0 || challengerID < 0 || cityID < 0 {
+		s := "occupierID:" + strconv.Itoa(occupierID) + "\n"
+		s += "challengerID:" + strconv.Itoa(challengerID) + "\n"
+		s += "cityID:" + strconv.Itoa(cityID) + "\n"
+		log.Fatalf(s)
+	}
+
+	if occupierID == challengerID {
+		return
+	}
+
+	city := battlefield.cities[cityID].name
+	if city == "" {
+		invadeRandomCity()
+	}
+	a1 := strconv.Itoa(occupierID)
+	a2 := strconv.Itoa(challengerID)
+
+	s := city + " has been destroyed by alien " + a1 + " and alien " + a2 + "!"
+	fmt.Println(s)
+
+	deleteAlien(occupierID)
+	deleteAlien(challengerID)
+	deleteCity(cityID)
+	invadeRandomCity()
 }
 
-func getRandomOriginCity() int {
+func deleteAlien(id int) {
+	if 0 < len(invaders.alien) {
+		fmt.Println("Deleting alien #" + strconv.Itoa(id))
+		delete(invaders.alien, id)
+		fmt.Println("Number of aliens left: " + strconv.Itoa(len(invaders.alien)))
+	}
+}
+
+func deleteCity(id int) {
+	if 0 < len(battlefield.cities) {
+		fmt.Println("Deleting city #" + strconv.Itoa(id))
+		delete(battlefield.cities, id)
+		fmt.Println("Number of cities left: " + strconv.Itoa(len(battlefield.cities)))
+	}
+}
+
+func getRandomCity() int {
 	id := -1
 	lengthCities := len(battlefield.cities)
-	//make sure all cities have not been nuked...
+	//make sure all cities have not been destroyed...
 	if 0 < lengthCities {
 		id = rand.Intn(lengthCities)
 		if cityExist(id) {
@@ -107,7 +178,7 @@ func getRandomOriginCity() int {
 			if exists {
 				return id
 			} else {
-				getRandomOriginCity()
+				getRandomCity()
 			}
 		} else {
 			fmt.Println("City not found")
@@ -149,8 +220,9 @@ func cityExist(id int) bool {
 
 func createAliens(n int) {
 	for m := 0; m < n; m++ {
-		invaders.alien[m] = Alien{moves: 0, currentCityId: 0}
+		invaders.alien[m] = Alien{id: m, moves: 0, currentCityId: 0}
 	}
+	//checkAliens()
 }
 
 func readBattlefield() {
@@ -173,6 +245,7 @@ func readBattlefield() {
 		//Check for valid line
 		if len(cityChunks) == 5 {
 			city := City{}
+			city.id = id
 			city.name = cityChunks[0]
 
 			north := strings.Split(cityChunks[1], "=")
@@ -191,12 +264,39 @@ func readBattlefield() {
 
 			battlefield.cities[id] = city
 		} else {
-			log.Fatalf("Warning corrupt file line on " + fmt.Sprintf("%d", id))
+			log.Fatalf("Error corrupt file line on " + strconv.Itoa(id))
 		}
 	}
-	//fmt.Println(battlefield)
 }
 
-func removeIndex(s []int, index int) []int {
-	return append(s[:index], s[index+1:]...)
+//Function to verify that map indices are consistent with city ids
+func checkCities() {
+	fmt.Println("Cities start")
+	for k, v := range battlefield.cities {
+		fmt.Print(k)
+		fmt.Print(":")
+		fmt.Println(v)
+		if k != v.id {
+			s := "City Error corrupt ordering, index "
+			s += strconv.Itoa(k) + " != id " + strconv.Itoa(v.id)
+			log.Fatalf(s)
+		}
+	}
+	fmt.Println("Cities end")
+}
+
+//Function to verify that map indices are consistent with alien ids
+func checkAliens() {
+	fmt.Println("Aliens start")
+	for k, v := range invaders.alien {
+		fmt.Print(k)
+		fmt.Print(":")
+		fmt.Println(v)
+		if k != v.id {
+			s := "Alien Error corrupt ordering, index "
+			s += strconv.Itoa(k) + " != id " + strconv.Itoa(v.id)
+			log.Fatalf(s)
+		}
+	}
+	fmt.Println("Aliens end")
 }
